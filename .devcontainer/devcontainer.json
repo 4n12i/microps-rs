@@ -1,5 +1,6 @@
 {
     "name": "Dev Container",
-    "capAdd": [ "NET_ADMIN" ], 
-    "build": { "dockerfile": "Dockerfile" } 
+    "build": { "dockerfile": "Dockerfile" }, 
+    "runArgs": [ "--privileged" ],
+    "capAdd": [ "NET_ADMIN" ]
 }
