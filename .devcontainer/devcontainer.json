@@ -1,5 +1,5 @@
 {
-	"name": "Dev Container",
+    "name": "Dev Container",
     "capAdd": [ "NET_ADMIN" ], 
     "build": { "dockerfile": "Dockerfile" } 
 }
