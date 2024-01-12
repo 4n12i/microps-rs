@@ -1,13 +1,13 @@
 use std::net::Ipv4Addr;
 
-// https://tools.ietf.org/html/rfc5735 
+// https://tools.ietf.org/html/rfc5735
 const _LOOPBACK_IP_ADDR: Ipv4Addr = Ipv4Addr::LOCALHOST;
 const _LOOPBACK_NETMASK: Ipv4Addr = Ipv4Addr::new(255, 0, 0, 0);
 
 const _ETHER_TAP_NAME: &str = "tap0";
 // https://tools.ietf.org/html/rfc7042
 const _ETHER_TAP_HW_ADDR: &str = "00:00:5e:00:53:01";
-// https://tools.ietf.org/html/rfc5731 
+// https://tools.ietf.org/html/rfc5731
 const _ETHER_TAP_IP_ADDR: Ipv4Addr = Ipv4Addr::new(192, 0, 2, 2);
 const _ETHER_TAP_NETMASK: Ipv4Addr = Ipv4Addr::new(255, 0, 0, 0);
 

@@ -5,7 +5,7 @@ use rsps::util::*;
 mod data;
 
 #[test]
-fn step0() {
+fn main() {
     debugf("Hello, World!");
     debugdump(data::TEST_DATA);
 }
