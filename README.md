@@ -1,5 +1,5 @@
-# rsps
-Toy TCP/IP protocol stack written in Rust
+# microps-rs
+Re-implementation of the TCP/IP protocol stack [microps](https://github.com/pandax381/microps) with Rust 
 
 ## Setup
 ### TAP Device Preparation 
