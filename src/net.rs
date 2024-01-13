@@ -1,8 +1,12 @@
-use crate::util::*;
 use anyhow::bail;
 use anyhow::Result;
+use core::fmt;
+use pretty_hex::PrettyHex;
 use std::collections::LinkedList;
 use std::net::Ipv4Addr;
+use tracing::debug;
+use tracing::info;
+use tracing::instrument;
 
 const _IFNAMSIZ: usize = 16;
 
@@ -33,139 +37,137 @@ fn net_device_state(dev: &NetDevice) -> String {
 
 #[allow(dead_code)]
 pub struct NetDevice {
-    // next: Box<NetDevice>,
-    index: usize,
-    // name: [char; IFNAMSIZ],
+    pub index: usize,
     pub name: String,
-    type_: u16,
-    mtu: u16,   // Maximum Transmission Unit
-    flags: u16, // NET_DEVICE_FLAG_*
-    hlen: u16,  // Header length
-    alen: u16,  // Address length
-    // addr: [u8; NET_DEVICE_ADDR_LEN],
-    addr: Ipv4Addr,
-    union: Option<Union>,
-    // net_device_ops: fn(&NetDeviceOps),
+    pub type_: u16,
+    pub mtu: u16,   // Maximum Transmission Unit
+    pub flags: u16, // NET_DEVICE_FLAG_*
+    pub hlen: u16,  // Header length
+    pub alen: u16,  // Address length
+    pub addr: Ipv4Addr,
+    pub union: Option<Union>,
     // TODO: void *priv;
 }
 
-#[allow(dead_code)]
+impl fmt::Debug for NetDevice {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.name, self.type_)
+    }
+}
+
 pub struct Union {
-    peer: Ipv4Addr,
-    broadcast: Ipv4Addr,
+    _peer: Ipv4Addr,
+    _broadcast: Ipv4Addr,
 }
 
 pub trait NetDeviceOps {
     fn open(&self) -> Result<()>;
     fn close(&self) -> Result<()>;
-    fn transmit(&self, type_: u16, data: &[u8]) -> Result<()>;
+    fn transmit(&self, type_: u16, data: &[u8], dst: Option<&[u8]>) -> Result<()>;
 }
 
 impl NetDevice {
-    pub fn new(index: usize, type_: u16, mtu: u16, flags: u16, union: Option<Union>) -> Self {
-        // TODO: Generate index for each device
-        Self {
-            index,
-            name: format!("net{index}"),
-            type_,
-            mtu,
-            flags,
-            hlen: 0,
-            alen: 0,
-            addr: Ipv4Addr::UNSPECIFIED,
-            union,
-        }
-    }
+    // pub fn new(index: usize, type_: u16, mtu: u16) -> Self {
+    //     // TODO: Generate index for each device
+    //     Self {
+    //         index,
+    //         name: format!("net{index}"),
+    //         type_,
+    //         mtu,
+    //         flags: NET_DEVICE_FLAG_UNSPECIFIED,
+    //         hlen: 0,
+    //         alen: 0,
+    //         addr: Ipv4Addr::UNSPECIFIED,
+    //         union: None,
+    //     }
+    // }
 }
 
+#[instrument(skip_all)]
 pub fn net_device_register(dev: NetDevice, devs: &mut LinkedList<NetDevice>) -> Result<()> {
-    infof(&format!(
-        "registered, dev={}, type=0x{:04x}",
-        dev.name, dev.type_
-    ));
+    info!("registered, dev={}, type=0x{:04x}", dev.name, dev.type_);
     devs.push_front(dev);
     Ok(())
 }
 
+#[instrument]
 pub fn net_device_open(dev: &mut NetDevice) -> Result<()> {
     if net_device_is_up(dev) {
-        errorf(&format!("already opened, dev={}", dev.name));
-        bail!("Error")
+        bail!("already opened, dev={}", dev.name);
     }
     if dev.open().is_err() {
-        errorf(&format!("failure, dev={}", dev.name));
-        bail!("Error")
+        bail!("failure, dev={}", dev.name);
     }
     dev.flags |= NET_DEVICE_FLAG_UP;
-    infof(&format!(
-        "dev={}, state={}",
-        dev.name,
-        net_device_state(dev)
-    ));
+    info!("dev={}, state={}", dev.name, net_device_state(dev));
     Ok(())
 }
 
+#[instrument]
 pub fn net_device_close(dev: &mut NetDevice) -> Result<()> {
     if !net_device_is_up(dev) {
-        errorf(&format!("not opened, dev{}", dev.name));
-        bail!("Error")
+        bail!("not opened, dev{}", dev.name);
     }
     if dev.close().is_err() {
-        errorf(&format!("failure, dev={}", dev.name));
-        bail!("Error")
+        bail!("failure, dev={}", dev.name);
     }
     dev.flags &= !NET_DEVICE_FLAG_UP;
-    infof(&format!(
-        "dev={}, state={}",
-        dev.name,
-        net_device_state(dev)
-    ));
+    info!("dev={}, state={}", dev.name, net_device_state(dev));
     Ok(())
 }
 
-pub fn net_device_output(dev: &NetDevice, type_: u16, data: &[u8], len: usize) -> Result<()> {
+#[instrument(skip_all)]
+pub fn net_device_output(
+    dev: &NetDevice,
+    type_: u16,
+    data: &[u8],
+    dst: Option<&[u8]>,
+) -> Result<()> {
     if !net_device_is_up(dev) {
-        errorf(&format!("not opend, dev={}", dev.name));
-        bail!("Error")
+        bail!("not opend, dev={}", dev.name);
     }
-    if len > dev.mtu as usize {
-        errorf(&format!(
+    if data.len() > dev.mtu as usize {
+        bail!(
             "too long, dev={}, mtu={}, len={}",
-            dev.name, dev.mtu, len
-        ));
-        bail!("Error")
+            dev.name,
+            dev.mtu,
+            data.len()
+        );
     }
-    debugf(&format!("dev={}, type=0x{}, len={}", dev.name, type_, len));
-    debugdump(data);
-    if dev.transmit(type_, data).is_err() {
-        errorf(&format!(
+    debug!("dev={}, type=0x{}, len={}", dev.name, type_, data.len());
+    debug!("{:?}", data.hex_dump());
+    if dev.transmit(type_, data, dst).is_err() {
+        bail!(
             "device transmit failure, dev={}, len={}",
-            dev.name, len
-        ));
-        bail!("Error")
+            dev.name,
+            data.len()
+        );
     }
     Ok(())
 }
 
+#[instrument]
 pub fn net_run(devs: &mut LinkedList<NetDevice>) -> Result<()> {
-    debugf("open all devices...");
+    debug!("open all devices...");
     for dev in devs {
         net_device_open(dev)?;
     }
-    debugf("running...");
+    debug!("running...");
     Ok(())
 }
 
+#[instrument]
 pub fn net_shutdown(net_devices: &mut LinkedList<NetDevice>) -> Result<()> {
-    debugf("close all devices...");
+    debug!("close all devices...");
     for dev in net_devices {
         net_device_close(dev)?;
     }
-    debugf("running...");
+    debug!("running...");
     Ok(())
 }
 
+#[instrument]
 pub fn net_init() -> Result<()> {
-    infof("initialized");
+    info!("initialized");
     Ok(())
 }

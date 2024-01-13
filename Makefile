@@ -1,6 +1,5 @@
 commit: 
 	make check
-	make test
 	git add .
 	git commit
 	

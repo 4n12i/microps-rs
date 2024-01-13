@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.79"
 pretty-hex = "0.4.1"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
