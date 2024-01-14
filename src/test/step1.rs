@@ -4,7 +4,6 @@ use crate::net::net_init;
 use crate::net::net_run;
 use crate::net::net_shutdown;
 use crate::test::data::TEST_DATA;
-use crate::util::tracing_init;
 use anyhow::Result;
 use signal_hook::consts::SIGINT;
 use signal_hook::iterator::Signals;
@@ -17,8 +16,6 @@ use std::time::Duration;
 use tracing::warn;
 
 pub fn run() -> Result<()> {
-    tracing_init();
-
     // Flag to detect Ctrl-C
     let running = Arc::new(AtomicBool::new(true));
 
