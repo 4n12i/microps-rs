@@ -2,6 +2,8 @@ use crate::debug_dump;
 use anyhow::bail;
 use anyhow::Result;
 use std::net::Ipv4Addr;
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering::SeqCst;
 use tracing::debug;
 use tracing::info;
 use tracing::instrument;
@@ -20,6 +22,12 @@ const _NET_DEVICE_FLAG_P2P: u16 = 0x0040;
 const _NET_DEVICE_FLAG_NEED_ARP: u16 = 0x0100;
 
 const _NET_DEVICE_ADDR_LEN: usize = 16;
+
+pub static NET_DEVICE_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+pub fn net_device_index() -> usize {
+    NET_DEVICE_INDEX.load(SeqCst)
+}
 
 fn net_device_is_up(dev: &NetDevice) -> bool {
     dev.flags & NET_DEVICE_FLAG_UP != 0
@@ -65,6 +73,7 @@ pub fn net_device_register(dev: NetDevice, devs: &mut Vec<NetDevice>) -> Result<
         dev.name, dev.device_type
     );
     devs.push(dev);
+    NET_DEVICE_INDEX.fetch_add(1, SeqCst);
     Ok(())
 }
 

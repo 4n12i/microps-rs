@@ -36,9 +36,10 @@ impl NetDeviceOps for DummyDevice {
 
 #[instrument(skip_all)]
 pub fn dummy_init(devs: &mut Vec<DummyDevice>) -> Result<()> {
+    let index = net_device_index();
     let dev = DummyDevice {
-        index: 0,
-        name: "net0".to_string(),
+        index,
+        name: format!("net{}", index),
         device_type: NET_DEVICE_TYPE_DUMMY,
         mtu: DUMMY_MTU,
         flags: NET_DEVICE_FLAG_UNSPECIFIED,
