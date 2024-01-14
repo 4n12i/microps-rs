@@ -1,8 +1,6 @@
+use crate::debug_dump;
 use anyhow::bail;
 use anyhow::Result;
-use core::fmt;
-use pretty_hex::PrettyHex;
-use std::collections::LinkedList;
 use std::net::Ipv4Addr;
 use tracing::debug;
 use tracing::info;
@@ -39,7 +37,7 @@ fn net_device_state(dev: &NetDevice) -> String {
 pub struct NetDevice {
     pub index: usize,
     pub name: String,
-    pub type_: u16,
+    pub device_type: u16,
     pub mtu: u16,   // Maximum Transmission Unit
     pub flags: u16, // NET_DEVICE_FLAG_*
     pub hlen: u16,  // Header length
@@ -47,12 +45,6 @@ pub struct NetDevice {
     pub addr: Ipv4Addr,
     pub union: Option<Union>,
     // TODO: void *priv;
-}
-
-impl fmt::Debug for NetDevice {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.name, self.type_)
-    }
 }
 
 pub struct Union {
@@ -66,31 +58,17 @@ pub trait NetDeviceOps {
     fn transmit(&self, type_: u16, data: &[u8], dst: Option<&[u8]>) -> Result<()>;
 }
 
-impl NetDevice {
-    // pub fn new(index: usize, type_: u16, mtu: u16) -> Self {
-    //     // TODO: Generate index for each device
-    //     Self {
-    //         index,
-    //         name: format!("net{index}"),
-    //         type_,
-    //         mtu,
-    //         flags: NET_DEVICE_FLAG_UNSPECIFIED,
-    //         hlen: 0,
-    //         alen: 0,
-    //         addr: Ipv4Addr::UNSPECIFIED,
-    //         union: None,
-    //     }
-    // }
-}
-
 #[instrument(skip_all)]
-pub fn net_device_register(dev: NetDevice, devs: &mut LinkedList<NetDevice>) -> Result<()> {
-    info!("registered, dev={}, type=0x{:04x}", dev.name, dev.type_);
-    devs.push_front(dev);
+pub fn net_device_register(dev: NetDevice, devs: &mut Vec<NetDevice>) -> Result<()> {
+    info!(
+        "registered, dev={}, type=0x{:04x}",
+        dev.name, dev.device_type
+    );
+    devs.push(dev);
     Ok(())
 }
 
-#[instrument]
+#[instrument(skip_all)]
 pub fn net_device_open(dev: &mut NetDevice) -> Result<()> {
     if net_device_is_up(dev) {
         bail!("already opened, dev={}", dev.name);
@@ -103,7 +81,7 @@ pub fn net_device_open(dev: &mut NetDevice) -> Result<()> {
     Ok(())
 }
 
-#[instrument]
+#[instrument(skip_all)]
 pub fn net_device_close(dev: &mut NetDevice) -> Result<()> {
     if !net_device_is_up(dev) {
         bail!("not opened, dev{}", dev.name);
@@ -119,12 +97,12 @@ pub fn net_device_close(dev: &mut NetDevice) -> Result<()> {
 #[instrument(skip_all)]
 pub fn net_device_output(
     dev: &NetDevice,
-    type_: u16,
+    device_type: u16,
     data: &[u8],
     dst: Option<&[u8]>,
 ) -> Result<()> {
     if !net_device_is_up(dev) {
-        bail!("not opend, dev={}", dev.name);
+        bail!("not opened, dev={}", dev.name);
     }
     if data.len() > dev.mtu as usize {
         bail!(
@@ -134,9 +112,14 @@ pub fn net_device_output(
             data.len()
         );
     }
-    debug!("dev={}, type=0x{}, len={}", dev.name, type_, data.len());
-    debug!("{:?}", data.hex_dump());
-    if dev.transmit(type_, data, dst).is_err() {
+    debug!(
+        "dev={}, type=0x{:04x}, len={}",
+        dev.name,
+        device_type,
+        data.len()
+    );
+    debug_dump!(data);
+    if dev.transmit(device_type, data, dst).is_err() {
         bail!(
             "device transmit failure, dev={}, len={}",
             dev.name,
@@ -146,8 +129,8 @@ pub fn net_device_output(
     Ok(())
 }
 
-#[instrument]
-pub fn net_run(devs: &mut LinkedList<NetDevice>) -> Result<()> {
+#[instrument(skip_all)]
+pub fn net_run(devs: &mut Vec<NetDevice>) -> Result<()> {
     debug!("open all devices...");
     for dev in devs {
         net_device_open(dev)?;
@@ -156,13 +139,13 @@ pub fn net_run(devs: &mut LinkedList<NetDevice>) -> Result<()> {
     Ok(())
 }
 
-#[instrument]
-pub fn net_shutdown(net_devices: &mut LinkedList<NetDevice>) -> Result<()> {
+#[instrument(skip_all)]
+pub fn net_shutdown(net_devices: &mut Vec<NetDevice>) -> Result<()> {
     debug!("close all devices...");
     for dev in net_devices {
         net_device_close(dev)?;
     }
-    debug!("running...");
+    debug!("shutting down");
     Ok(())
 }
 
