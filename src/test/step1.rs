@@ -31,7 +31,7 @@ pub fn run() -> Result<()> {
         }
     });
 
-    warn!("Press Ctrl-C to exit.");
+    warn!("Press Ctrl-C to exit");
 
     let mut net_devices = Vec::new();
     net_init()?;
