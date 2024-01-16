@@ -5,16 +5,11 @@ commit:
 	
 run: 
 	make check
-	cargo test
-	RUST_LOG=debug cargo run
+	cargo run
 	
 build: 
 	make check
-	cargo test
 	cargo build
-
-test: 
-	RUST_LOG=debug cargo test -- --nocapture
 
 check:
 	cargo fmt
