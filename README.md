@@ -1,12 +1,20 @@
 # microps-rs
 Re-implementation of the TCP/IP protocol stack [microps](https://github.com/pandax381/microps) with Rust 
 
-## Setup
-### TAP Device Preparation 
-```sh
-$ sudo ip tuntap add mode tap user $USER name tap0
-$ sudo ip addr add 192.0.2.1/24 dev tap0
-$ sudo ip link set tap0 up
+## Usage 
+
+1. Prepare TAP device
+
+```bash
+sudo ip tuntap add mode tap user $USER name tap0
+sudo ip addr add 192.0.2.1/24 dev tap0
+sudo ip link set tap0 up
+```
+
+2. Build and run
+
+```bash 
+cargo run
 ```
 
 ## Reference
