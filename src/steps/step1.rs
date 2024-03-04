@@ -1,19 +1,21 @@
-use crate::driver::dummy::dummy_init;
-use crate::net::net_device_output;
-use crate::net::net_init;
-use crate::net::net_run;
-use crate::net::net_shutdown;
-use crate::test::data::TEST_DATA;
-use anyhow::Result;
-use signal_hook::consts::SIGINT;
-use signal_hook::iterator::Signals;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
+
+use anyhow::Result;
+use signal_hook::consts::SIGINT;
+use signal_hook::iterator::Signals;
 use tracing::warn;
+
+use crate::driver::dummy::dummy_init;
+use crate::net::net_device_output;
+use crate::net::net_init;
+use crate::net::net_run;
+use crate::net::net_shutdown;
+use crate::steps::data::TEST_DATA;
 
 pub fn run() -> Result<()> {
     // Flag to detect Ctrl-C
@@ -21,7 +23,7 @@ pub fn run() -> Result<()> {
 
     // Handler setting
     let r = Arc::clone(&running);
-    let mut signals = Signals::new([SIGINT]).expect("Failed to create signal handler");
+    let mut signals = Signals::new([SIGINT]).expect("failed to create signal handler");
     thread::spawn(move || {
         for _ in signals.forever() {
             r.store(false, Ordering::SeqCst);

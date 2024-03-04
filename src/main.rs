@@ -6,5 +6,5 @@ fn main() -> Result<()> {
         .with_max_level(tracing::Level::TRACE)
         .init();
 
-    microps_rs::test::step1::run()
+    microps_rs::steps::step1::run()
 }

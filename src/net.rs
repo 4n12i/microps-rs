@@ -1,12 +1,14 @@
-use crate::debug_dump;
-use anyhow::bail;
-use anyhow::Result;
 use std::net::Ipv4Addr;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering::SeqCst;
+
+use anyhow::bail;
+use anyhow::Result;
 use tracing::debug;
 use tracing::info;
 use tracing::instrument;
+
+use crate::debug_dump;
 
 const _IFNAMSIZ: usize = 16;
 

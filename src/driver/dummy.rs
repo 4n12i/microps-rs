@@ -1,3 +1,10 @@
+use std::net::Ipv4Addr;
+
+use anyhow::bail;
+use anyhow::Result;
+use tracing::debug;
+use tracing::instrument;
+
 use crate::debug_dump;
 use crate::net::net_device_index;
 use crate::net::net_device_register;
@@ -5,11 +12,6 @@ use crate::net::NetDevice as DummyDevice;
 use crate::net::NetDeviceOps;
 use crate::net::NET_DEVICE_FLAG_UNSPECIFIED;
 use crate::net::NET_DEVICE_TYPE_DUMMY;
-use anyhow::bail;
-use anyhow::Result;
-use std::net::Ipv4Addr;
-use tracing::debug;
-use tracing::instrument;
 
 const DUMMY_MTU: u16 = u16::MAX; // Maximum size of IP datagram
 

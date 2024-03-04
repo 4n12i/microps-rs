@@ -1,7 +1,3 @@
-//
-// Logging
-//
-
 #[macro_export]
 macro_rules! debug_dump {
     ($data:expr) => {
