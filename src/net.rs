@@ -9,6 +9,9 @@ use tracing::info;
 use tracing::instrument;
 
 use crate::debug_dump;
+use crate::platform::linux::intr::intr_init;
+use crate::platform::linux::intr::intr_run;
+use crate::platform::linux::intr::intr_shutdown;
 
 const _IFNAMSIZ: usize = 16;
 
@@ -142,6 +145,8 @@ pub fn net_device_output(
 
 #[instrument(skip_all)]
 pub fn net_run(devs: &mut Vec<NetDevice>) -> Result<()> {
+    intr_run()?;
+
     debug!("open all devices...");
     for dev in devs {
         net_device_open(dev)?;
@@ -156,12 +161,17 @@ pub fn net_shutdown(net_devices: &mut Vec<NetDevice>) -> Result<()> {
     for dev in net_devices {
         net_device_close(dev)?;
     }
+
+    intr_shutdown()?;
+
     debug!("shutting down");
     Ok(())
 }
 
 #[instrument]
 pub fn net_init() -> Result<()> {
+    intr_init()?;
+
     info!("initialized");
     Ok(())
 }

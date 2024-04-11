@@ -12,8 +12,11 @@ use crate::net::NetDevice as DummyDevice;
 use crate::net::NetDeviceOps;
 use crate::net::NET_DEVICE_FLAG_UNSPECIFIED;
 use crate::net::NET_DEVICE_TYPE_DUMMY;
+use crate::platform::linux::intr::intr_raise_irq;
+use crate::platform::linux::INTR_IRQ_BASE;
 
 const DUMMY_MTU: u16 = u16::MAX; // Maximum size of IP datagram
+const DUMMY_IRQ: u8 = INTR_IRQ_BASE;
 
 impl NetDeviceOps for DummyDevice {
     #[instrument(skip_all)]
@@ -36,6 +39,7 @@ impl NetDeviceOps for DummyDevice {
         );
         debug_dump!(data);
         // Drop data
+        intr_raise_irq(DUMMY_IRQ)?;
         Ok(())
     }
 }
